@@ -577,6 +577,9 @@ private:
     // check for new range beacon data and update stored measurements if available
     void readRngBcnData();
 
+    // check for new position data from external SLAM system
+    void readSlamData();
+
     // determine when to perform fusion of GPS position and  velocity measurements
     void SelectVelPosFusion();
 
@@ -855,6 +858,8 @@ private:
     uint8_t magStoreIndex;          // Magnetometer data storage index
     gps_elements gpsDataNew;        // GPS data at the current time horizon
     gps_elements gpsDataDelayed;    // GPS data at the fusion time horizon
+    slam_elements slamDataNew;      // SLAM data at current time horizon
+    slam_elements slamDataDelayed;  // SLAM data at the fustion time horizon
     uint8_t gpsStoreIndex;          // GPS data storage index
     output_elements outputDataNew;  // output state data at the current time step
     output_elements outputDataDelayed; // output state data at the current time step
@@ -995,9 +1000,12 @@ private:
     Vector3f accelPosOffset;        // position of IMU accelerometer unit in body frame (m)
 
     // Latest position/velocity estimates from SLAM system (obtained via MAVLink messages)
-    Vector3f slamPosition;           // x,y,z pose estimates in a local NED frame
-    Vector9f slamCovariance;         // 3x3 uncertainty matrix
-    uint32_t slamReceviedTime_ms;    // Time at which data was received.
+    Vector3f slamPosition;            // x,y,z pose estimates in a local NED frame
+    Vector9f slamCovariance;          // 3x3 uncertainty matrix
+    uint32_t slam_last_msg_time_ms;   // Time at which data was received.
+    uint32_t lastTimeSlamReceived_ms; // Last time slam data processed for filtering.
+    Vector3f slamOrigin;              // Origin of slam system
+    bool firstSlamUpdate;             // First run of the slam update    
     
     // Range finder
     float baroHgtOffset;                    // offset applied when when switching to use of Baro height
