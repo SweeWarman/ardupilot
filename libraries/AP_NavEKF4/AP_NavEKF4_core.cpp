@@ -110,6 +110,9 @@ bool NavEKF3_core::setup_core(NavEKF3 *_frontend, uint8_t _imu_index, uint8_t _c
     if(!storedGPS.init(obs_buffer_length)) {
         return false;
     }
+    if(!storedSLAM.init(obs_buffer_length)) {
+        return false;
+    }    
     if(!storedMag.init(obs_buffer_length)) {
         return false;
     }
@@ -541,6 +544,9 @@ void NavEKF3_core::UpdateFilter(bool predict)
 
         // Update states using GPS and altimeter data
         SelectVelPosFusion();
+
+        // Updates states using SLAM data
+        SelectSlamFusion();
 
         // Update states using range beacon data
         SelectRngBcnFusion();

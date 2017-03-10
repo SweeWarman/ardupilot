@@ -783,11 +783,15 @@ void APNavEKF4::readSlamData(){
                 alignMagStateDeclination();
 
                 // Set the height of the NED origin to 'height of baro height datum relative to GPS height datum'
-                EKF_origin.alt = gpsloc.alt = baroDataNew.hgt;
+                EKF_origin.alt = gpsloc.alt - baroDataNew.hgt;
 
                 // Set the uncertainty of the GPS origin height
                 ekfOriginHgtVar = sq(gpsHgtAccuracy);
 
+                // Mark the position of the first SLAM output.
+                // All future SLAM updates will be offset relative to this measurement thus treating this as the origin.
+                // Note: We just reset the EKF origin also. Ideally, the local position estimates obtained relative to
+                // EKF origin and the SLAM origin must be the same (in a perfect world).
                 slamOrigin.x = slamPosition.x;
                 slamOrigin.y = slamPosition.y;
                 slamOrigin.z = slamPosition.z;
@@ -801,8 +805,7 @@ void APNavEKF4::readSlamData(){
             slamDataNew.pos.y = slamPosition.y - slamOrigin.y;
             slamDataNew.pos.z = slamPosition.z - slamOrigin.z;
             storedSLAM.push(slamDataNew);
-        }
-        
+        }        
     }    
 }
 
