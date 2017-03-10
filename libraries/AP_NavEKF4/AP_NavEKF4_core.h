@@ -308,6 +308,9 @@ public:
     // get the IMU index
     uint8_t getIMUIndex(void) const { return imu_index; }
 
+    // Set local position ned estimate from SLAM system.
+    bool SetLocalPositionNED(Vector3f pos,Vector9f posCov);
+
 private:
     // Reference to the global EKF frontend for parameters
     NavEKF3 *frontend;

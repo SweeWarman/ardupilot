@@ -38,7 +38,7 @@ void NavEKF4_core::SelectSlamFusion()
     }
 }
 
-// fuse selected position, velocity and height measurements
+// fuse selected position and height measurements
 void NavEKF4_core::FuseSlamNED()
 {    
     Vector3f Innov;          

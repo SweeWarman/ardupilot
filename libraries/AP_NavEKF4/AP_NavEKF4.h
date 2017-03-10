@@ -306,6 +306,9 @@ public:
     // are we doing sensor logging inside the EKF?
     bool have_ekf_logging(void) const { return logging.enabled && _logging_mask != 0; }
 
+    // Handle local NED position estimate
+    bool handle_local_ned_position_cov(mavlink_message_t msg);
+
 private:
     uint8_t num_cores; // number of allocated cores
     uint8_t primary;   // current primary core

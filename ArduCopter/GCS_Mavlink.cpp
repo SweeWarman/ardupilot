@@ -966,6 +966,14 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         break;
     }
 
+#if SLAM == ENABLED    
+    case MAVLINK_MSG_ID_LOCAL_POSITION_NED_COV:
+    {
+        handle_local_position_ned_cov(msg);
+        break;
+    }
+#endif    
+
     case MAVLINK_MSG_ID_RC_CHANNELS_OVERRIDE:       // MAV ID: 70
     {
         // allow override of RC channel values for HIL
@@ -1058,8 +1066,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 result = MAV_RESULT_FAILED;
             }
             break;
-        }
-
+        }       
 
         case MAV_CMD_NAV_LOITER_UNLIM:
             if (copter.set_mode(LOITER, MODE_REASON_GCS_COMMAND)) {

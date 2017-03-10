@@ -1708,4 +1708,10 @@ void NavEKF3_core::initialiseQuatCovariances(Vector3f &rotVarVec)
     }
 }
 
+bool AP_NavEKF3::SetLocalPositionNed(Vector3f pos,Vector9f covPos){
+    slamPosition = pos;
+    slamCovariance = covPos;
+    slam_last_msg_time_ms = AP_HAL::millis();
+}
+
 #endif // HAL_CPU_CLASS
