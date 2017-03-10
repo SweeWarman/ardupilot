@@ -308,6 +308,9 @@ public:
     // get the IMU index
     uint8_t getIMUIndex(void) const { return imu_index; }
 
+    // Set local position ned estimate from SLAM system.
+    bool SetLocalPositionNED(Vector3f pos,Vector9f posCov);    
+
 private:
     // Reference to the global EKF frontend for parameters
     NavEKF3 *frontend;
@@ -405,6 +408,12 @@ private:
         Vector3f    vel;         // 3..5
         uint32_t    time_ms;     // 6
         uint8_t     sensor_idx;  // 7
+    };
+
+    struct slam_elements{
+        Vector3f pos;           // x,y,z      
+        Vector9f posCov;        // position covariance 3x3
+        uint32_t time_ms;
     };
 
     struct mag_elements {
@@ -848,6 +857,8 @@ private:
     uint8_t magStoreIndex;          // Magnetometer data storage index
     gps_elements gpsDataNew;        // GPS data at the current time horizon
     gps_elements gpsDataDelayed;    // GPS data at the fusion time horizon
+    slam_elements slamDataNew;      // SLAM data at current time horizon
+    slam_elements slamDataDelayed;  // SLAM data at the fustion time horizon
     uint8_t gpsStoreIndex;          // GPS data storage index
     output_elements outputDataNew;  // output state data at the current time step
     output_elements outputDataDelayed; // output state data at the current time step
@@ -987,6 +998,13 @@ private:
     float delTimeOF;                // time that delAngBodyOF is summed across
     Vector3f accelPosOffset;        // position of IMU accelerometer unit in body frame (m)
 
+    // Latest position/velocity estimates from SLAM system (obtained via MAVLink messages)
+    Vector3f slamPosition;            // x,y,z pose estimates in a local NED frame
+    Vector9f slamCovariance;          // 3x3 uncertainty matrix
+    uint32_t slam_last_msg_time_ms;   // Time at which data was received.
+    uint32_t lastTimeSlamReceived_ms; // Last time slam data processed for filtering.
+    Vector3f slamOrigin;              // Origin of slam system
+    bool firstSlamUpdate;             // First run of the slam update    
 
     // Range finder
     float baroHgtOffset;                    // offset applied when when switching to use of Baro height

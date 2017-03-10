@@ -110,6 +110,9 @@ bool NavEKF3_core::setup_core(NavEKF3 *_frontend, uint8_t _imu_index, uint8_t _c
     if(!storedGPS.init(obs_buffer_length)) {
         return false;
     }
+    if(!storedSLAM.init(obs_buffer_length)) {
+        return false;
+    }    
     if(!storedMag.init(obs_buffer_length)) {
         return false;
     }
@@ -541,6 +544,9 @@ void NavEKF3_core::UpdateFilter(bool predict)
 
         // Update states using GPS and altimeter data
         SelectVelPosFusion();
+
+        // Update states using local NED position from SLAM system
+        SelectSlamFusion();
 
         // Update states using range beacon data
         SelectRngBcnFusion();
@@ -1700,6 +1706,12 @@ void NavEKF3_core::initialiseQuatCovariances(Vector3f &rotVarVec)
         P[3][3] = 0.25f*rotVarVec.z;
 
     }
+}
+
+bool AP_NavEKF3::SetLocalPositionNed(Vector3f pos,Vector9f covPos){
+    slamPosition = pos;
+    slamCovariance = covPos;
+    slam_last_msg_time_ms = AP_HAL::millis();
 }
 
 #endif // HAL_CPU_CLASS

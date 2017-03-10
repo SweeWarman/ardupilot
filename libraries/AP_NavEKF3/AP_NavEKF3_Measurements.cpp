@@ -763,4 +763,50 @@ void NavEKF3_core::readRngBcnData()
 
 }
 
+// Read position data from SLAM system
+void APNavEKF3::readSlamData(){
+    // check for new SLAM data
+    // limit update rate to avoid overflowing the FIFO buffer
+    if (slam_last_message_time_ms - lastTimeSlamReceived_ms > frontend->sensorIntervalMin_ms) {
+        lastTimeSlamReceived_ms = slam_last_message_time_ms;
+
+        slamDataNew.time_ms = lastTimeSlamReceived_ms;
+
+        if(firstSlamUpdate){
+
+            // Reset the EKF origin to synchronize the origins of the SLAM system and EKF origin
+            if(gpsGoodToAlign){
+                setOrigin();
+
+                // set the NE earth magnetic filed states using the published declination
+                // and set the corresponding variances and covariances
+                alignMagStateDeclination();
+
+                // Set the height of the NED origin to 'height of baro height datum relative to GPS height datum'
+                EKF_origin.alt = gpsloc.alt - baroDataNew.hgt;
+
+                // Set the uncertainty of the GPS origin height
+                ekfOriginHgtVar = sq(gpsHgtAccuracy);
+
+                // Mark the position of the first SLAM output.
+                // All future SLAM updates will be offset relative to this measurement thus treating this as the origin.
+                // Note: We just reset the EKF origin also. Ideally, the local position estimates obtained relative to
+                // EKF origin and the SLAM origin must be the same (in a perfect world).
+                slamOrigin.x = slamPosition.x;
+                slamOrigin.y = slamPosition.y;
+                slamOrigin.z = slamPosition.z;
+                
+                firstSlamUpdate = false;                
+            }
+        }
+            
+        if(!firstSlamUpdate){
+            slamDataNew.pos.x = slamPosition.x - slamOrigin.x;
+            slamDataNew.pos.y = slamPosition.y - slamOrigin.y;
+            slamDataNew.pos.z = slamPosition.z - slamOrigin.z;
+            storedSLAM.push(slamDataNew);
+        }        
+    }    
+}
+
 #endif // HAL_CPU_CLASS
