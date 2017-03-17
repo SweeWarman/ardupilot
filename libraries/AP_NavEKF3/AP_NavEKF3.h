@@ -307,7 +307,7 @@ public:
     bool have_ekf_logging(void) const { return logging.enabled && _logging_mask != 0; }
 
     // Handle local NED position estimate
-    bool handle_local_ned_position_cov(mavlink_message_t msg);
+    void handle_local_position_ned_cov(mavlink_local_position_ned_cov_t msg);
 
 private:
     uint8_t num_cores; // number of allocated cores

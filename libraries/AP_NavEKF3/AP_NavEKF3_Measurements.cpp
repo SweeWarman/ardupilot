@@ -764,15 +764,18 @@ void NavEKF3_core::readRngBcnData()
 }
 
 // Read position data from SLAM system
-void APNavEKF3::readSlamData(){
+void NavEKF3_core::readSlamData(){
     // check for new SLAM data
     // limit update rate to avoid overflowing the FIFO buffer
-    if (slam_last_message_time_ms - lastTimeSlamReceived_ms > frontend->sensorIntervalMin_ms) {
-        lastTimeSlamReceived_ms = slam_last_message_time_ms;
+    if (slam_last_msg_time_ms - lastTimeSlamReceived_ms > frontend->sensorIntervalMin_ms) {
+        lastTimeSlamReceived_ms = slam_last_msg_time_ms;
 
         slamDataNew.time_ms = lastTimeSlamReceived_ms;
 
         if(firstSlamUpdate){
+
+        	// Read the GPS locaton in WGS-84 lat,long,height coordinates
+			const struct Location &gpsloc = _ahrs->get_gps().location();
 
             // Reset the EKF origin to synchronize the origins of the SLAM system and EKF origin
             if(gpsGoodToAlign){
@@ -804,6 +807,7 @@ void APNavEKF3::readSlamData(){
             slamDataNew.pos.x = slamPosition.x - slamOrigin.x;
             slamDataNew.pos.y = slamPosition.y - slamOrigin.y;
             slamDataNew.pos.z = slamPosition.z - slamOrigin.z;
+            memcpy(slamDataNew.posCov,slamCovariance,sizeof(float)*45);
             storedSLAM.push(slamDataNew);
         }        
     }    

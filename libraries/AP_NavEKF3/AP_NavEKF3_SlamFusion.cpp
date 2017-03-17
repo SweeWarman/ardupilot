@@ -43,7 +43,7 @@ void NavEKF3_core::FuseSlamNED()
 {    
     Vector3f Innov;          
     Vector3f observation;    
-    float SK;
+
 
     // form the observation vector
     observation[0] = slamDataDelayed.pos.x;
@@ -51,13 +51,13 @@ void NavEKF3_core::FuseSlamNED()
     observation[2] = slamDataDelayed.pos.z;
 
     // Compute innovation
-    Innov[0] = stateStruct.pos.x - observation[0];
-    Innov[1] = stateStruct.pos.y - observation[1];
-    Innov[2] = stateStruct.pos.z - observation[2];
+    Innov[0] = stateStruct.position.x - observation[0];
+    Innov[1] = stateStruct.position.y - observation[1];
+    Innov[2] = stateStruct.position.z - observation[2];
     
     // Observation covariance
-    Matrix3f R_OBS(slamDataDelayed.posCov[0],slamDataDelayed.posCov[1],slamDataDelayed.posCov[2]
-                   slamDataDelayed.posCov[3],slamDataDelayed.posCov[4],slamDataDelayed.posCov[5]
+    Matrix3f R_OBS(slamDataDelayed.posCov[0],slamDataDelayed.posCov[1],slamDataDelayed.posCov[2],
+                   slamDataDelayed.posCov[3],slamDataDelayed.posCov[4],slamDataDelayed.posCov[5],
                    slamDataDelayed.posCov[6],slamDataDelayed.posCov[7],slamDataDelayed.posCov[8]);
 
     // Covariance of mean position estimate
@@ -66,7 +66,7 @@ void NavEKF3_core::FuseSlamNED()
                    P[9][7], P[9][8], P[9][9]);
     
     // Note: Measurement jacobian is Identity just like the GPS fusion.
-    Matrix3f varInnov = Sigma * R_OBS;
+    Matrix3f varInnov = Sigma + R_OBS;
     Matrix3f invVarInnov;
     bool inverseExists = varInnov.inverse(invVarInnov); 
 
@@ -74,32 +74,33 @@ void NavEKF3_core::FuseSlamNED()
         return;
     }
 
-    Vector24f sKfusion1,sKfusion2,sKfusion3;            
+    Vector24 sKfusion1,sKfusion2,sKfusion3; // Each column of the Kalman gain matrix
     for(uint8_t i = 0; i<= stateIndexLim; i++){            
-        Kfusion1[i] = P[i][7]*invVarInnov[0][0] + P[i][8]*invVarInnov[1][0] + P[i][9]*invVarInnov[2][0];
-        Kfusion2[i] = P[i][7]*invVarInnov[0][1] + P[i][8]*invVarInnov[1][1] + P[i][9]*invVarInnov[2][1];
-        Kfusion3[i] = P[i][7]*invVarInnov[0][2] + P[i][8]*invVarInnov[1][2] + P[i][9]*invVarInnov[2][2];
+        sKfusion1[i] = P[i][7]*invVarInnov[0][0] + P[i][8]*invVarInnov[1][0] + P[i][9]*invVarInnov[2][0];
+        sKfusion2[i] = P[i][7]*invVarInnov[0][1] + P[i][8]*invVarInnov[1][1] + P[i][9]*invVarInnov[2][1];
+        sKfusion3[i] = P[i][7]*invVarInnov[0][2] + P[i][8]*invVarInnov[1][2] + P[i][9]*invVarInnov[2][2];
     }
 
-    Matrix24f sKHP;
+    // Efficient matrix multiplication of K*H*P
+    Matrix24 sKHP;
     for (uint8_t i= 0; i<=stateIndexLim; i++) {
         for (uint8_t j= 0; j<=stateIndexLim; j++)
             {
-               sKHP[i][j] = Kfusion1[i] * P[7][j];
+               sKHP[i][j] = sKfusion1[i] * P[7][j];
             }
     }
 
     for (uint8_t i= 0; i<=stateIndexLim; i++) {
         for (uint8_t j= 0; j<=stateIndexLim; j++)
             {
-               sKHP[i][j] += Kfusion2[i] * P[8][j];
+               sKHP[i][j] += sKfusion2[i] * P[8][j];
             }
     }
 
     for (uint8_t i= 0; i<=stateIndexLim; i++) {
         for (uint8_t j= 0; j<=stateIndexLim; j++)
             {
-               sKHP[i][j] += Kfusion3[i] * P[9][j];
+               sKHP[i][j] += sKfusion3[i] * P[9][j];
             }
     }
         
@@ -125,7 +126,7 @@ void NavEKF3_core::FuseSlamNED()
         
         // update states and renormalise the quaternions
         for (uint8_t i = 0; i<=stateIndexLim; i++) {
-            statesArray[i] = statesArray[i] - Kfusion1[i] * Innov[0] - Kfusion2[i] *Innov[1] - Kfusion3[i]*Innov[2] ;
+            statesArray[i] = statesArray[i] - sKfusion1[i] * Innov[0] - sKfusion2[i] *Innov[1] - sKfusion3[i]*Innov[2] ;
         }
 
         stateStruct.quat.normalize();                

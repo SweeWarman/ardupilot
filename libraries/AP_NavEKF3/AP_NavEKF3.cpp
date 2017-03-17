@@ -1452,12 +1452,11 @@ void NavEKF3::updateLaneSwitchPosDownResetData(uint8_t new_primary, uint8_t old_
 
 }
 
-bool NavEKF3::handle_local_position_ned_cov(mavlink_message_t msg){
+void NavEKF3::handle_local_position_ned_cov(mavlink_local_position_ned_cov_t msg){
     Vector3f pos(msg.x,msg.y,msg.z);
-    Vector9f covPos(msg.covariance[0],msg.covariance[1],msg.covariance[2],
-                    msg.covariance[3],msg.covariance[4],msg.covariance[5],
-                    msg.covariance[6],msg.covariance[7],msg.covariance[8]);
-    core->SetLocalPositionNed(pos,covPos);
+    float covPos[45];
+    memcpy(covPos,msg.covariance,sizeof(float)*45);
+    core->SetLocalPositionNED(pos,covPos);
 }
 
 #endif //HAL_CPU_CLASS

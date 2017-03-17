@@ -309,7 +309,7 @@ public:
     uint8_t getIMUIndex(void) const { return imu_index; }
 
     // Set local position ned estimate from SLAM system.
-    bool SetLocalPositionNED(Vector3f pos,Vector9f posCov);    
+    bool SetLocalPositionNED(Vector3f pos,float* posCov);
 
 private:
     // Reference to the global EKF frontend for parameters
@@ -411,8 +411,8 @@ private:
     };
 
     struct slam_elements{
-        Vector3f pos;           // x,y,z      
-        Vector9f posCov;        // position covariance 3x3
+        Vector3f pos;            // x,y,z
+        float posCov[45];       // position covariance 3x3
         uint32_t time_ms;
     };
 
@@ -476,6 +476,9 @@ private:
 
     // fuse selected position, velocity and height measurements
     void FuseVelPosNED();
+
+    // fuse selected SLAM position measurements
+    void FuseSlamNED();
 
     // fuse range beacon measurements
     void FuseRngBcn();
@@ -568,6 +571,9 @@ private:
     // check for new valid GPS data and update stored measurement if available
     void readGpsData();
 
+    // check for local position NED data from slam system
+    void readSlamData();
+
     // check for new altitude measurement data and update stored measurement if available
     void readBaroData();
 
@@ -582,6 +588,9 @@ private:
 
     // determine when to perform fusion of GPS position and  velocity measurements
     void SelectVelPosFusion();
+
+    // determine when to perform fusion of SLAM position measurements
+    void SelectSlamFusion();
 
     // determine when to perform fusion of range measurements take realtive to a beacon at a known NED position
     void SelectRngBcnFusion();
@@ -754,6 +763,7 @@ private:
     Matrix24 P;                     // covariance matrix
     imu_ring_buffer_t<imu_elements> storedIMU;      // IMU data buffer
     obs_ring_buffer_t<gps_elements> storedGPS;      // GPS data buffer
+    obs_ring_buffer_t<slam_elements> storedSLAM;    // SLAM data buffer
     obs_ring_buffer_t<mag_elements> storedMag;      // Magnetometer data buffer
     obs_ring_buffer_t<baro_elements> storedBaro;    // Baro data buffer
     obs_ring_buffer_t<tas_elements> storedTAS;      // TAS data buffer
@@ -873,6 +883,7 @@ private:
     bool motorsArmed;               // true when the motors have been armed
     bool prevMotorsArmed;           // value of motorsArmed from previous frame
     bool posVelFusionDelayed;       // true when the position and velocity fusion has been delayed
+    bool slamFusionDelayed;         // true when slam fusion has been delayed
     bool optFlowFusionDelayed;      // true when the optical flow fusion has been delayed
     bool airSpdFusionDelayed;       // true when the air speed fusion has been delayed
     bool sideSlipFusionDelayed;     // true when the sideslip fusion has been delayed
@@ -984,6 +995,7 @@ private:
     bool rangeDataToFuse;           // true when valid range finder height data has arrived at the fusion time horizon.
     bool baroDataToFuse;            // true when valid baro height finder data has arrived at the fusion time horizon.
     bool gpsDataToFuse;             // true when valid GPS data has arrived at the fusion time horizon.
+    bool slamDataToFuse;            // true when valid SLAM data has arrived at the fusion time horizon.
     bool magDataToFuse;             // true when valid magnetometer data has arrived at the fusion time horizon
     Vector2f heldVelNE;             // velocity held when no aiding is available
     enum AidingMode {AID_ABSOLUTE=0,    // GPS or some other form of absolute position reference aiding is being used (optical flow may also be used in parallel) so position estimates are absolute.
@@ -1000,7 +1012,7 @@ private:
 
     // Latest position/velocity estimates from SLAM system (obtained via MAVLink messages)
     Vector3f slamPosition;            // x,y,z pose estimates in a local NED frame
-    Vector9f slamCovariance;          // 3x3 uncertainty matrix
+    float slamCovariance[45];         // 3x3 uncertainty matrix
     uint32_t slam_last_msg_time_ms;   // Time at which data was received.
     uint32_t lastTimeSlamReceived_ms; // Last time slam data processed for filtering.
     Vector3f slamOrigin;              // Origin of slam system

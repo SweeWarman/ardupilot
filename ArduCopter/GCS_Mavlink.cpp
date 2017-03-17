@@ -969,7 +969,9 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
 #if SLAM == ENABLED    
     case MAVLINK_MSG_ID_LOCAL_POSITION_NED_COV:
     {
-        handle_local_position_ned_cov(msg);
+    	mavlink_local_position_ned_cov_t packet;
+    	mavlink_msg_local_position_ned_cov_decode(msg,&packet);
+        handle_local_position_ned_cov(packet);
         break;
     }
 #endif    

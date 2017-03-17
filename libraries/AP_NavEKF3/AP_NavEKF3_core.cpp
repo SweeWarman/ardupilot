@@ -1708,9 +1708,9 @@ void NavEKF3_core::initialiseQuatCovariances(Vector3f &rotVarVec)
     }
 }
 
-bool AP_NavEKF3::SetLocalPositionNed(Vector3f pos,Vector9f covPos){
+bool NavEKF3_core::SetLocalPositionNED(Vector3f pos,float* covPos){
     slamPosition = pos;
-    slamCovariance = covPos;
+    memcpy(slamCovariance,covPos,sizeof(float)*45);
     slam_last_msg_time_ms = AP_HAL::millis();
 }
 
